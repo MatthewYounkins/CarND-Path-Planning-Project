@@ -209,7 +209,7 @@ int main() {
 	int lane = 1;
 	
 	// Have a reference velocity to target
-	double ref_vel = 49.5;
+	double ref_vel = 0;
 		
   h.onMessage([&ref_vel, &map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy,&lane] (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
@@ -241,12 +241,12 @@ int main() {
           	auto previous_path_y = j[1]["previous_path_y"];
           	double end_path_s = j[1]["end_path_s"];            	// Previous path's end s and d values 
           	double end_path_d = j[1]["end_path_d"];
-						vector<vector<double>> sensor_fusion = j[1]["sensor_fusion"];
+						vector<vector<double>> sensor_fusion = j[1]["sensor_fusion"];  //sensor fusion is the i-th car on the road
 						
 						int prev_size = previous_path_x.size();
 						
 						
-						/*
+						
 						if(prev_size > 0)
 						{
 							car_s = end_path_s;
@@ -257,13 +257,14 @@ int main() {
 						//find rev_v to use
 						for(int i = 0; i < sensor_fusion.size(); i++)
 						{
-							//car is in my lanefloat d = sensor_fusion[i][6];
-							if(d < (2+4*lane+2) && d > (2+4*lane-2))
+							//car is in my lane
+							float d = sensor_fusion[i][6];
+							if(d < (2+4*lane+2) && d > (2+4*lane-2))  //what lane the car is in
 							{
-								double vx = sensor_fusion[i][3];
-								double vy = sensor_fusion[i][4];
+								double vx = sensor_fusion[i][3]; //speed of other car
+								double vy = sensor_fusion[i][4]; //speed of other car
 								double check_speed = sqrt(vx*vx+vy*vy);
-								double check_car_s = sensor_fusion[i][5];
+								double check_car_s = sensor_fusion[i][5]; //is car close to us?
 								
 								check_car_s+=((double)prev_size*.02*check_speed);
 								//check s values greater than mine and s gap
@@ -274,26 +275,34 @@ int main() {
 									
 									// do some logic here, lower reference velocity so we don't crash into the car in front
 									// also flag to try to change lanes
-									ref_vel = 29.5; //mph
-									//too_close = true;
+									//ref_vel = 29.5; //mph
+									too_close = true;
+									
+									if(lane > 0)
+									{
+										lane = -1;
+									}
+									
 									
 								}
-								
+								   
 						
 							}
 						}
-						*/
 						
-						/*
+						
+						
+						
 						if(too_close)
 						{
-							ref_vel -= .224;
+							ref_vel -= .224; // 5 m/s*s
 						}
 						else if(ref_vel < 49.5)
 						{
+							//std::cout << ref_vel;
 							ref_vel += .224;
 						}
-						*/
+						
 						
 						// Create a list of widely spaced (x,y) waypoints, evenly spaced at 30m
 						// Later we will inerpolate these waypoints with a spline and fill it in with more points that control speed

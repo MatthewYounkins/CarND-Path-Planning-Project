@@ -1,15 +1,16 @@
-#include <fstream>
-#include <math.h>
-#include <uWS/uWS.h>
-#include <chrono>
-#include <iostream>
-#include <thread>
-#include <vector>
-#include "Eigen-3.3/Eigen/Core"
-#include "Eigen-3.3/Eigen/QR"
-#include "json.hpp"
-#include "spline.h"  // https://youtu.be/3QP3hJHm4WM?t=1365  new file
-// https://youtu.be/3QP3hJHm4WM?t=2375
+#include <fstream> 	
+#include <math.h>  
+#include <uWS/uWS.h>   
+#include <chrono>    
+#include <iostream>     
+#include <thread>      
+#include <vector>       
+#include "Eigen-3.3/Eigen/Core"        
+#include "Eigen-3.3/Eigen/QR"         
+#include "json.hpp"          
+#include "spline.h"
+#include "time.h"
+
 using namespace std;
 
 
@@ -17,8 +18,8 @@ using namespace std;
 using json = nlohmann::json;
 // For converting back and forth between radians and degrees.
 constexpr double pi() { return M_PI; }
-double deg2rad(double x) { return x * pi() / 180; }
-double rad2deg(double x) { return x * 180 / pi(); }
+double deg2rad(double x) { return x * 0.0174532925199433; } //pi/180       							
+double rad2deg(double x) { return x * 57.2957795130823; } //180/pi         				
 
 // Checks if the SocketIO event has JSON data.
 // If there is data the JSON object in string format will be returned,
@@ -179,6 +180,9 @@ int main() {
   vector<double> map_waypoints_s;
   vector<double> map_waypoints_dx;
   vector<double> map_waypoints_dy;
+	vector<double> josephus;
+	
+	int counter = 0 ;
 
   string map_file_ = "../data/highway_map.csv";    // Waypoint map to read from 
   double max_s = 6945.554;  // The max s value before wrapping around the track back to 0
@@ -210,8 +214,10 @@ int main() {
 	
 	// Have a reference velocity to target
 	double ref_vel = 0;
+	clock_t beginTime = clock();
+	time_t now = time(0);
 		
-  h.onMessage([&ref_vel, &map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy,&lane] (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
+  h.onMessage([&now, &beginTime, &josephus, &counter, &ref_vel, &map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy,&lane] (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
@@ -280,7 +286,7 @@ int main() {
 									
 									if(lane > 0)
 									{
-										lane = -1;
+										lane = 3;
 									}
 									
 									
@@ -328,6 +334,8 @@ int main() {
 							
 							ptsy.push_back(prev_car_y);
 							ptsy.push_back(car_y);
+							
+
 						}
 						//use the previous path's end point as starting reference
 						else
@@ -351,6 +359,25 @@ int main() {
 						
 						
 						}
+						
+						josephus.push_back(counter++);
+						
+						if (!(counter % 1000)) {
+							now = time(0);	
+							std::cout << now << "\n";
+						}
+						
+						
+						/*
+						//std::copy(josephus.begin(), josephus.end(),std::ostream_iterator<int>(std::cout, " "));
+						
+						clock_t endTime = clock();
+						double timeSpent = (endTime - beginTime)/(.001*CLOCKS_PER_SEC) ;
+						//std::cout<< " " << counter << " " << beginTime << " " << endTime << " " << CLOCKS_PER_SEC<<  "\n";
+						std::cout<< " " << counter << " " << timeSpent <<  "\n";
+						*/
+						//beginTime = clock();
+						
 						
 						//In frenet add evenly 30m spaced points ahead of the starting reference
 						vector<double> next_wp0 = getXY(car_s+30,(2+4*lane),map_waypoints_s,map_waypoints_x,map_waypoints_y);
@@ -479,19 +506,6 @@ int main() {
   }
   h.run();
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
